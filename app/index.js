@@ -1,12 +1,22 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
     console.log('Logowanie:', email, password);
+    router.replace('/equipment')
+
+    try {
+    } catch (error){
+
+    } finally {
+
+    }
   };
 
   return (
