@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { createReservation } from '../../../../lib/api'; 
+import { createReservation } from '../../../../lib/api';
 
 const API_URL = 'http://localhost:3001';
 
