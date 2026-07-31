@@ -1,21 +1,26 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { login } from '../lib/auth';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleLogin = () => {
-    console.log('Logowanie:', email, password);
-    router.replace('/(tabs)/equipment')
+  const handleLogin = async () => {
+    setError('');
+    setSubmitting(true);
 
     try {
-    } catch (error){
-
+      await login(email, password);
+      router.replace('/(tabs)/equipment');
+    } catch (err) {
+      setError(err.message);
     } finally {
-
+      setSubmitting(false);
     }
   };
 
@@ -23,6 +28,8 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Sprzętownia</Text>
       <Text style={styles.subtitle}>Zaloguj się firmowym adresem e-maill, aby rezerwować sprzęt</Text>
+
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <TextInput
         style={styles.input}
@@ -41,8 +48,12 @@ export default function LoginScreen() {
         secureTextEntry
       />
 
-      <Pressable style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Zaloguj się</Text>
+      <Pressable style={styles.button} onPress={handleLogin} disabled={submitting}>
+        {submitting ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Zaloguj się</Text>
+        )}
       </Pressable>
 
       <Text style={styles.bottomtext}>Nie masz konta? Poproś administratora o pomoc.</Text>
@@ -68,6 +79,11 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     textAlign: 'left',
   },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 13,
+    marginBottom: 16,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -89,9 +105,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  bottomtext:{
+  bottomtext: {
     fontSize: 13,
     textAlign: 'center',
-  }
-
+  },
 });
