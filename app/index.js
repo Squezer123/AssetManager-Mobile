@@ -9,7 +9,7 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     console.log('Logowanie:', email, password);
-    router.replace('/equipment')
+    router.replace('/(tabs)/equipment')
 
     try {
     } catch (error){

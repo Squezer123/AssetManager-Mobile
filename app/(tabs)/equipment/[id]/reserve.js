@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -105,12 +105,13 @@ export default function ReserveScreen() {
     const start = new Date(Math.min(rangeStart, selectedDay));
     const end = new Date(Math.max(rangeStart, selectedDay));
 
+    // TODO: podłączyć POST /reservations po dodaniu prawdziwego logowania (JWT)
     console.log('Rezerwacja:', { equipmentId: id, startDate: start, endDate: end });
   }
 
   if (loading) {
     return (
-      <View>
+      <View style={styles.center}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -118,55 +119,72 @@ export default function ReserveScreen() {
 
   if (error || !equipment) {
     return (
-      <View>
+      <View style={styles.center}>
         <Text>{error || 'Nie znaleziono sprzętu'}</Text>
       </View>
     );
   }
 
   return (
-    <View>
-      <View>
-        <Pressable onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={22} />
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={22} color="#0F172A" />
         </Pressable>
         <View>
-          <Text>Rezerwacja</Text>
-          <Text numberOfLines={1}>{equipment.name}</Text>
+          <Text style={styles.headerTitle}>Rezerwacja</Text>
+          <Text style={styles.headerSubtitle} numberOfLines={1}>{equipment.name}</Text>
         </View>
       </View>
 
-      <ScrollView>
-        <View>
-          <View>
-            <Pressable onPress={() => changeMonth(-1)}>
-              <Ionicons name="chevron-back" size={18} />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.calendarCard}>
+          <View style={styles.monthRow}>
+            <Pressable onPress={() => changeMonth(-1)} style={styles.monthButton}>
+              <Ionicons name="chevron-back" size={18} color="#334155" />
             </Pressable>
-            <Text>
+            <Text style={styles.monthTitle}>
               {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
             </Text>
-            <Pressable onPress={() => changeMonth(1)}>
-              <Ionicons name="chevron-forward" size={18} />
+            <Pressable onPress={() => changeMonth(1)} style={styles.monthButton}>
+              <Ionicons name="chevron-forward" size={18} color="#334155" />
             </Pressable>
           </View>
 
-          <View>
+          <View style={styles.weekRow}>
             {DAY_NAMES.map((d) => (
-              <Text key={d}>{d}</Text>
+              <Text key={d} style={styles.weekDayLabel}>{d}</Text>
             ))}
           </View>
 
-          <View>
+          <View style={styles.daysGrid}>
             {days.map((day, i) => {
-              if (!day) return <View key={i} />;
+              if (!day) return <View key={i} style={styles.dayCell} />;
 
               const booked = isDayFullyBooked(day);
               const isSelected =
                 selectedDay === startOfDay(day).getTime() || isDayInSelectedRange(day);
 
               return (
-                <Pressable key={i} disabled={booked} onPress={() => handleDayClick(day)}>
-                  <Text>{day.getDate()}</Text>
+                <Pressable
+                  key={i}
+                  disabled={booked}
+                  onPress={() => handleDayClick(day)}
+                  style={[
+                    styles.dayCell,
+                    booked && styles.dayCellBooked,
+                    isSelected && styles.dayCellSelected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.dayCellText,
+                      booked && styles.dayCellTextBooked,
+                      isSelected && styles.dayCellTextSelected,
+                    ]}
+                  >
+                    {day.getDate()}
+                  </Text>
                 </Pressable>
               );
             })}
@@ -174,8 +192,8 @@ export default function ReserveScreen() {
         </View>
 
         {rangeStart && selectedDay && (
-          <View>
-            <Text>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryText}>
               Wybrany zakres: {new Date(Math.min(rangeStart, selectedDay)).toLocaleDateString()}
               {' — '}
               {new Date(Math.max(rangeStart, selectedDay)).toLocaleDateString()}
@@ -186,23 +204,118 @@ export default function ReserveScreen() {
                 setSelectedDay(null);
               }}
             >
-              <Text>Wyczyść wybór</Text>
+              <Text style={styles.clearText}>Wyczyść wybór</Text>
             </Pressable>
           </View>
         )}
 
         {equipment.bufferDays > 0 && (
-          <Text>
+          <Text style={styles.bufferNote}>
             Ten sprzęt wymaga {equipment.bufferDays} dni przerwy na przygotowanie po zwrocie.
           </Text>
         )}
       </ScrollView>
 
-      <View>
-        <Pressable disabled={!rangeStart || !selectedDay} onPress={handleConfirm}>
-          <Text>Potwierdź rezerwację</Text>
+      <View style={styles.footer}>
+        <Pressable
+          style={[styles.confirmButton, (!rangeStart || !selectedDay) && styles.confirmButtonDisabled]}
+          disabled={!rangeStart || !selectedDay}
+          onPress={handleConfirm}
+        >
+          <Text style={styles.confirmButtonText}>Potwierdź rezerwację</Text>
         </Pressable>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
+  headerSubtitle: { fontSize: 13, color: '#64748B' },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 24 },
+  calendarCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  monthRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  monthButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthTitle: { fontSize: 15, fontWeight: '600', color: '#0F172A' },
+  weekRow: { flexDirection: 'row' },
+  weekDayLabel: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 11,
+    color: '#94A3B8',
+    paddingVertical: 4,
+  },
+  daysGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 },
+  dayCell: {
+    width: `${100 / 7}%`,
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    marginVertical: 2,
+  },
+  dayCellBooked: { backgroundColor: '#F8FAFC' },
+  dayCellSelected: { backgroundColor: '#0F172A' },
+  dayCellText: { fontSize: 14, color: '#334155' },
+  dayCellTextBooked: { color: '#CBD5E1' },
+  dayCellTextSelected: { color: '#fff', fontWeight: '600' },
+  summaryCard: {
+    marginTop: 16,
+    padding: 14,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+  },
+  summaryText: { fontSize: 14, color: '#334155', marginBottom: 8 },
+  clearText: { fontSize: 13, color: '#EF4444', fontWeight: '500' },
+  bufferNote: { fontSize: 13, color: '#64748B', marginTop: 16 },
+  footer: { padding: 20, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  confirmButton: {
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  confirmButtonDisabled: { backgroundColor: '#CBD5E1' },
+  confirmButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+});
