@@ -20,7 +20,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="reservations"
+        name="reservation"
         options={{
           title: 'Rezerwacje',
           tabBarIcon: ({ color, size, focused }) => (

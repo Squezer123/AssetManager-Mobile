@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { View, Text, FlatList, Pressable, Image, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getMyReservations, cancelReservation, returnReservation } from '../../lib/api';
+import { getMyReservations, cancelReservation, returnReservation } from '../../../lib/api.js';
 
 const CATEGORY_MAP = { LAPTOP: 'Laptop', PHONE: 'Telefon', CAMERA: 'Aparat', OTHER: 'Inne' };
 
@@ -111,12 +111,15 @@ export default function ReservationsScreen() {
     const statusStyle = STATUS_STYLES[statusLabel] || { bg: '#E2E8F0', text: '#334155' };
     const categoryLabel = CATEGORY_MAP[item.equipment?.category] || item.equipment?.category;
     const isActing = actionLoadingId === item.id;
-
+    const isFuture = item.status === 'ACTIVE' && new Date(item.startDate) > new Date();
+    const isEditable = isFuture;
+  
     return (
       <View key={item.id} style={styles.card}>
         <Pressable
           style={styles.cardTop}
-          onPress={() => router.push(`/equipment/${item.equipment?.id}`)}
+          disabled={!isEditable}
+          onPress={() => router.push(`/reservation/${item.id}`)}
         >
           {item.equipment?.imageUrl ? (
             <Image source={{ uri: item.equipment.imageUrl }} style={styles.thumbnail} />
@@ -136,6 +139,7 @@ export default function ReservationsScreen() {
             <View style={[styles.badge, { backgroundColor: statusStyle.bg }]}>
               <Text style={[styles.badgeText, { color: statusStyle.text }]}>{statusLabel}</Text>
             </View>
+            {isEditable && <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />}
           </View>
 
           <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
