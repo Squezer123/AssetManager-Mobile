@@ -105,7 +105,6 @@ export default function ReserveScreen() {
     const start = new Date(Math.min(rangeStart, selectedDay));
     const end = new Date(Math.max(rangeStart, selectedDay));
 
-    // TODO: podłączyć POST /reservations po dodaniu prawdziwego logowania (JWT)
     console.log('Rezerwacja:', { equipmentId: id, startDate: start, endDate: end });
   }
 

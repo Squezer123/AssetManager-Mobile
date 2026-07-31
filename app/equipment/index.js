@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const API_URL = 'http://localhost:3001'; // zmień na IP komputera jeśli używasz fizycznego telefonu
+const API_URL = 'http://localhost:3001'; 
 
 const CATEGORIES = ['Wszystkie', 'Laptop', 'Telefon', 'Aparat', 'Inne'];
 
