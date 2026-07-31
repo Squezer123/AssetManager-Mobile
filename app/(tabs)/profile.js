@@ -1,16 +1,11 @@
-import { useState } from 'react';
-import { View, Text, Pressable, Switch, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, Pressable, Switch, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
-const MOCK_USER = {
-  name: 'Anna Kowalska',
-  email: 'anna.kowalska@firma.pl',
-  department: 'Marketing',
-  role: 'ADMIN',
-};
+import { getCurrentUser, logout } from '../../lib/auth';
 
 function getInitials(name) {
+  if (!name) return '?';
   return name
     .split(' ')
     .map((part) => part[0])
@@ -21,12 +16,49 @@ function getInitials(name) {
 export default function ProfileScreen() {
   const router = useRouter();
   const [remindersEnabled, setRemindersEnabled] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const isAdmin = MOCK_USER.role === 'ADMIN';
+  useEffect(() => {
+    fetchUser();
+  }, []);
 
-  const handleLogout = () => {
+  const fetchUser = async () => {
+    try {
+      setLoading(true);
+      const data = await getCurrentUser();
+      setUser(data);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logout();
     router.replace('/');
   };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <View style={styles.center}>
+        <Text>{error || 'Nie udało się załadować profilu'}</Text>
+      </View>
+    );
+  }
+
+  const isAdmin = user.role === 'ADMIN';
 
   return (
     <View style={styles.container}>
@@ -34,25 +66,15 @@ export default function ProfileScreen() {
 
       <View style={styles.userCard}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{getInitials(MOCK_USER.name)}</Text>
+          <Text style={styles.avatarText}>{getInitials(user.name)}</Text>
         </View>
         <View>
-          <Text style={styles.userName}>{MOCK_USER.name}</Text>
-          <Text style={styles.userEmail}>{MOCK_USER.email}</Text>
+          <Text style={styles.userName}>{user.name || 'Brak imienia'}</Text>
+          <Text style={styles.userEmail}>{user.email}</Text>
         </View>
       </View>
 
       <View style={styles.optionsCard}>
-        <View style={styles.optionRow}>
-          <View style={styles.optionLeft}>
-            <Ionicons name="business-outline" size={20} color="#334155" />
-            <Text style={styles.optionLabel}>Dział</Text>
-          </View>
-          <Text style={styles.optionValue}>{MOCK_USER.department}</Text>
-        </View>
-
-        <View style={styles.divider} />
-
         <View style={styles.optionRow}>
           <View style={styles.optionLeft}>
             <Ionicons name="notifications-outline" size={20} color="#334155" />
@@ -95,6 +117,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 20,
   },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: {
     fontSize: 24,
     fontWeight: '700',
@@ -156,10 +179,6 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 14,
     color: '#0F172A',
-  },
-  optionValue: {
-    fontSize: 14,
-    color: '#64748B',
   },
   optionLink: {
     fontSize: 14,
