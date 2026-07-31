@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { createReservation } from '../../../../lib/api'; 
 
 const API_URL = 'http://localhost:3001';
 
@@ -28,6 +29,9 @@ export default function ReserveScreen() {
   const [currentMonth, setCurrentMonth] = useState(startOfDay(new Date()));
   const [rangeStart, setRangeStart] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
+
+  const [reservationLoading, setReservationLoading] = useState(false);
+  const [reservationError, setReservationError] = useState(null);
 
   useEffect(() => {
     fetchEquipment();
@@ -100,13 +104,34 @@ export default function ReserveScreen() {
     setSelectedDay(null);
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!rangeStart || !selectedDay) return;
+
     const start = new Date(Math.min(rangeStart, selectedDay));
     const end = new Date(Math.max(rangeStart, selectedDay));
 
-    // TODO: podłączyć POST /reservations po dodaniu prawdziwego logowania (JWT)
-    console.log('Rezerwacja:', { equipmentId: id, startDate: start, endDate: end });
+    try {
+      setReservationLoading(true);
+      setReservationError(null);
+
+      await createReservation({
+        equipmentId: id,
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
+      });
+
+      Alert.alert('Sukces', 'Rezerwacja została potwierdzona!', [
+        {
+          text: 'OK',
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (err) {
+      console.error('Błąd rezerwacji:', err);
+      setReservationError(err.message || 'Nie udało się utworzyć rezerwacji');
+    } finally {
+      setReservationLoading(false);
+    }
   }
 
   if (loading) {
@@ -194,9 +219,9 @@ export default function ReserveScreen() {
         {rangeStart && selectedDay && (
           <View style={styles.summaryCard}>
             <Text style={styles.summaryText}>
-              Wybrany zakres: {new Date(Math.min(rangeStart, selectedDay)).toLocaleDateString()}
+              Wybrany zakres: {new Date(Math.min(rangeStart, selectedDay)).toLocaleDateString('pl-PL')}
               {' — '}
-              {new Date(Math.max(rangeStart, selectedDay)).toLocaleDateString()}
+              {new Date(Math.max(rangeStart, selectedDay)).toLocaleDateString('pl-PL')}
             </Text>
             <Pressable
               onPress={() => {
@@ -217,12 +242,22 @@ export default function ReserveScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
+        {reservationError && (
+          <Text style={styles.errorText}>{reservationError}</Text>
+        )}
         <Pressable
-          style={[styles.confirmButton, (!rangeStart || !selectedDay) && styles.confirmButtonDisabled]}
-          disabled={!rangeStart || !selectedDay}
+          style={[
+            styles.confirmButton,
+            (reservationLoading || !rangeStart || !selectedDay) && styles.confirmButtonDisabled,
+          ]}
+          disabled={reservationLoading || !rangeStart || !selectedDay}
           onPress={handleConfirm}
         >
-          <Text style={styles.confirmButtonText}>Potwierdź rezerwację</Text>
+          {reservationLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.confirmButtonText}>Potwierdź rezerwację</Text>
+          )}
         </Pressable>
       </View>
     </View>
@@ -309,13 +344,26 @@ const styles = StyleSheet.create({
   summaryText: { fontSize: 14, color: '#334155', marginBottom: 8 },
   clearText: { fontSize: 13, color: '#EF4444', fontWeight: '500' },
   bufferNote: { fontSize: 13, color: '#64748B', marginTop: 16 },
-  footer: { padding: 20, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  footer: { 
+    padding: 20, 
+    borderTopWidth: 1, 
+    borderTopColor: '#F1F5F9',
+    backgroundColor: '#fff',
+  },
   confirmButton: {
     backgroundColor: '#0F172A',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
+    minHeight: 48,
+    justifyContent: 'center',
   },
   confirmButtonDisabled: { backgroundColor: '#CBD5E1' },
   confirmButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  errorText: { 
+    fontSize: 13, 
+    color: '#EF4444', 
+    marginBottom: 12,
+    textAlign: 'center',
+  },
 });
